@@ -53,6 +53,7 @@ A concurrency-safe temporary inventory reservation system built for multi-wareho
 
 3. **Migrate and seed**
    ```bash
+   npx prisma generate
    npx prisma migrate dev --name init
    npx prisma db seed
    ```
@@ -98,15 +99,7 @@ git push origin main
 
 4. **Build command** (Settings → General → Build & Development Settings):
 
-   ```bash
-   npx prisma migrate deploy && npm run build
-   ```
-
-   Or add to `package.json`:
-
-   ```json
-   "build": "prisma migrate deploy && next build"
-   ```
+   The repo `build` script already runs `prisma generate`, migrations, then `next build` — no extra Vercel build command needed.
 
 5. Deploy. Vercel will assign a URL like `https://your-app.vercel.app`.
 
