@@ -17,6 +17,8 @@ interface Reservation {
   };
 }
 
+import { getPusherClient } from "@/lib/pusher-client";
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,22 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchReservations, 5000);
-    return () => clearInterval(interval);
+    
+    const pusher = getPusherClient();
+    if (pusher) {
+      const channel = pusher.subscribe("inventory");
+      channel.bind("stock-update", () => {
+        fetchReservations();
+      });
+
+      return () => {
+        pusher.unsubscribe("inventory");
+      };
+    } else {
+      // Fallback to polling if pusher is not configured
+      const interval = setInterval(fetchReservations, 5000);
+      return () => clearInterval(interval);
+    }
   }, [fetchReservations]);
 
   const handleConfirm = async (id: string) => {

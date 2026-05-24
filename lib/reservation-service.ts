@@ -12,6 +12,7 @@
  */
 
 import { prisma } from "./prisma";
+import { getPusherServer } from "./pusher";
 import type { ReservationStatus } from "@/app/generated/prisma/client";
 
 const RESERVATION_TTL_MINUTES = parseInt(
@@ -135,6 +136,11 @@ export async function createReservation(
       return reservation;
     });
 
+    const pusher = getPusherServer();
+    if (pusher) {
+      pusher.trigger("inventory", "stock-update", { timestamp: Date.now() }).catch(() => {});
+    }
+
     return {
       success: true,
       reservation: result,
@@ -228,6 +234,11 @@ export async function confirmReservation(
       return confirmed;
     });
 
+    const pusher = getPusherServer();
+    if (pusher) {
+      pusher.trigger("inventory", "stock-update", { timestamp: Date.now() }).catch(() => {});
+    }
+
     return { success: true, reservation: result };
   } catch (error: unknown) {
     if (isServiceError(error)) {
@@ -291,6 +302,11 @@ export async function releaseReservation(
 
       return released;
     });
+
+    const pusher = getPusherServer();
+    if (pusher) {
+      pusher.trigger("inventory", "stock-update", { timestamp: Date.now() }).catch(() => {});
+    }
 
     return { success: true, reservation: result };
   } catch (error: unknown) {
@@ -358,6 +374,13 @@ export async function expireStaleReservations(): Promise<number> {
         `Failed to expire reservation ${reservation.id}:`,
         error
       );
+    }
+  }
+
+  if (expiredCount > 0) {
+    const pusher = getPusherServer();
+    if (pusher) {
+      pusher.trigger("inventory", "stock-update", { timestamp: Date.now() }).catch(() => {});
     }
   }
 
