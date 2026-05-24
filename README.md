@@ -122,7 +122,15 @@ Or use Neon's SQL editor / a one-off Vercel shell if you prefer.
 
 ### 5. Cron (reservation expiry)
 
-`vercel.json` already configures a cron job every 5 minutes hitting `/api/cron/expire`. On the **Vercel Pro** plan, crons run automatically. On the **Hobby** plan, cron support is limited — expiry still works via **lazy cleanup** when a user tries to confirm an expired hold (HTTP **410**).
+`vercel.json` runs `/api/cron/expire` **once per day** (`0 0 * * *`) so it works on **Vercel Hobby** (Hobby only allows daily crons, not every 5 minutes).
+
+| Option | What to do |
+|--------|------------|
+| **Stay on Hobby (recommended)** | Keep the daily cron in `vercel.json` and deploy. Stock is still protected: confirming an expired hold returns **HTTP 410** and releases stock immediately (lazy expiry). |
+| **Need cleanup every ~5 min** | Upgrade to [Vercel Pro](https://vercel.com/docs/plans/pro), then change the schedule in `vercel.json` back to `*/5 * * * *`. |
+| **Free external cron** | Remove the `crons` block from `vercel.json`, deploy, then use [cron-job.org](https://cron-job.org) (or similar) to `GET https://your-app.vercel.app/api/cron/expire` every 5 minutes. |
+
+You do **not** need Pro for the app to work correctly — Pro only makes background cleanup more frequent.
 
 ### 6. Verify after deploy
 
@@ -156,7 +164,7 @@ Because the `FOR UPDATE` lock serializes concurrent access at the database level
 The system uses a **dual-layer** approach:
 
 ### 1. Active Cleanup (Vercel Cron)
-A cron job configured in `vercel.json` hits `GET /api/cron/expire` every 5 minutes. It sweeps for all `PENDING` reservations where `expiresAt < now()`, decrements `reservedQuantity`, and marks them `EXPIRED`.
+A cron job configured in `vercel.json` hits `GET /api/cron/expire` (daily on Hobby; every 5 minutes on Pro if you change the schedule). It sweeps for all `PENDING` reservations where `expiresAt < now()`, decrements `reservedQuantity`, and marks them `EXPIRED`.
 
 ### 2. Lazy Cleanup (On Confirm)
 When a user calls `POST /api/reservations/:id/confirm`, the handler checks if `expiresAt < now()`. If expired, it immediately releases the stock and returns **HTTP 410 Gone** — ensuring no stale reservation can consume inventory.
