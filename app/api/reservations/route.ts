@@ -3,39 +3,34 @@ import { createReservation } from "@/lib/reservation-service";
 import { z } from "zod";
 
 const createReservationSchema = z.object({
-  inventoryId: z.string(),
+  inventoryId: z.string().min(1),
   quantity: z.number().int().positive(),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const result = createReservationSchema.safeParse(body);
+    const validation = createReservationSchema.safeParse(body);
 
-    if (!result.success) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Invalid request body", details: result.error.format() },
+        { error: "Invalid request body", details: validation.error.format() },
         { status: 400 }
       );
     }
 
-    const { inventoryId, quantity } = result.data;
+    const result = await createReservation(validation.data);
 
-    // The service throws a specific error message if stock is insufficient
-    const reservation = await createReservation({ inventoryId, quantity });
-
-    return NextResponse.json(reservation, { status: 201 });
-  } catch (error: any) {
-    console.error("Reservation failed:", error);
-    
-    // Check if it's the specific insufficient stock error from our service
-    if (error.message === "Insufficient available stock") {
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Insufficient stock. Could not reserve item." },
-        { status: 409 }
+        { error: result.error },
+        { status: result.statusCode || 500 }
       );
     }
 
+    return NextResponse.json(result.reservation, { status: 201 });
+  } catch (error) {
+    console.error("Reservation failed:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
