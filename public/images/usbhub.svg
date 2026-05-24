@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="100" y1="160" x2="300" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="24" fill="url(#bg)"/>
+  <!-- Hub body -->
+  <rect x="100" y="170" width="200" height="60" rx="14" fill="url(#accent)" opacity="0.85"/>
+  <!-- Port indicators on right side -->
+  <g fill="#111827" opacity="0.4">
+    <!-- USB-C ports -->
+    <rect x="270" y="185" width="16" height="8" rx="4"/>
+    <rect x="270" y="200" width="16" height="8" rx="4"/>
+    <rect x="270" y="215" width="16" height="8" rx="4"/>
+  </g>
+  <!-- Port indicators on left side -->
+  <g fill="#111827" opacity="0.4">
+    <rect x="114" y="185" width="12" height="8" rx="4"/>
+    <rect x="114" y="200" width="16" height="8" rx="4"/>
+    <rect x="114" y="215" width="10" height="8" rx="2"/>
+  </g>
+  <!-- LED indicator -->
+  <circle cx="200" cy="178" r="3" fill="#4ade80" opacity="0.9"/>
+  <!-- Cable hint -->
+  <path d="M200 230 Q200 260 180 280 Q160 300 160 320" stroke="url(#accent)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.4"/>
+  <!-- Glow -->
+  <ellipse cx="200" cy="200" rx="110" ry="40" fill="url(#accent)" opacity="0.06"/>
+  <!-- Surface reflection -->
+  <rect x="110" y="172" width="180" height="20" rx="10" fill="white" opacity="0.05"/>
+</svg>
