@@ -34,9 +34,10 @@ export async function POST(request: Request) {
     const result = await createReservation(validation.data);
 
     if (!result.success) {
+      const status = result.statusCode || 500;
       return NextResponse.json(
-        { error: result.error },
-        { status: result.statusCode || 500 }
+        { error: result.error, statusCode: status },
+        { status }
       );
     }
 

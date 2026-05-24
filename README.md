@@ -5,7 +5,7 @@ A concurrency-safe temporary inventory reservation system built for multi-wareho
 ## 🚀 Live Demo & Deliverables
 
 - **Repository**: [https://github.com/iamanimeshdev/Allo-Health](https://github.com/iamanimeshdev/Allo-Health)
-- **Live URL**: *(Add your Vercel deployment URL here)*
+- **Live URL**: *(Add your Vercel deployment URL after deploying — see [Deploy to Vercel + Neon](#-deploy-to-vercel--neon) below)*
 
 ## 🛠 Tech Stack
 
@@ -62,6 +62,74 @@ A concurrency-safe temporary inventory reservation system built for multi-wareho
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000).
+
+## 🚀 Deploy to Vercel + Neon
+
+### 1. Neon (PostgreSQL)
+
+1. Go to [neon.tech](https://neon.tech) and create a project.
+2. Copy the **connection string** (use the pooled connection string if offered; either works with Prisma).
+3. Keep `?sslmode=require` on the URL.
+
+### 2. Push your code to GitHub
+
+```bash
+git add .
+git commit -m "Prepare for deployment"
+git push origin main
+```
+
+### 3. Vercel project
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import your GitHub repo.
+2. Framework preset: **Next.js** (auto-detected).
+3. Under **Environment Variables**, add everything from `.env.example`:
+
+   | Variable | Required | Notes |
+   |----------|----------|--------|
+   | `DATABASE_URL` | **Yes** | Neon connection string |
+   | `RESERVATION_TTL_MINUTES` | No | Default `10` |
+   | `UPSTASH_REDIS_REST_URL` | No | Idempotency (recommended) |
+   | `UPSTASH_REDIS_REST_TOKEN` | No | Idempotency (recommended) |
+   | `PUSHER_APP_ID` | No | Real-time updates |
+   | `NEXT_PUBLIC_PUSHER_KEY` | No | Real-time updates |
+   | `PUSHER_SECRET` | No | Real-time updates |
+   | `NEXT_PUBLIC_PUSHER_CLUSTER` | No | e.g. `ap2` |
+
+4. **Build command** (Settings → General → Build & Development Settings):
+
+   ```bash
+   npx prisma migrate deploy && npm run build
+   ```
+
+   Or add to `package.json`:
+
+   ```json
+   "build": "prisma migrate deploy && next build"
+   ```
+
+5. Deploy. Vercel will assign a URL like `https://your-app.vercel.app`.
+
+### 4. Seed production data (once)
+
+After the first successful deploy, run the seed against Neon from your machine:
+
+```bash
+DATABASE_URL="your-neon-connection-string" npx prisma db seed
+```
+
+Or use Neon's SQL editor / a one-off Vercel shell if you prefer.
+
+### 5. Cron (reservation expiry)
+
+`vercel.json` already configures a cron job every 5 minutes hitting `/api/cron/expire`. On the **Vercel Pro** plan, crons run automatically. On the **Hobby** plan, cron support is limited — expiry still works via **lazy cleanup** when a user tries to confirm an expired hold (HTTP **410**).
+
+### 6. Verify after deploy
+
+- Open `/` — products load from Neon.
+- Reserve an item → `/checkout/:id` with countdown.
+- To demo **409**: open two browser tabs, reserve the last unit of the glucose meter (seeded with very low stock) at the same time — one tab should show **Not enough stock (409 Conflict)**.
+- To demo **410**: wait for the checkout timer to hit zero, then click **Confirm purchase** — you should see **Reservation expired (410 Gone)**.
 
 ## 🔒 Correctness under Concurrency
 

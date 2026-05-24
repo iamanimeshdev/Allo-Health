@@ -24,7 +24,7 @@ interface InventoryRecord {
 }
 
 async function main() {
-  console.log("🌱 Seeding database...\n");
+  console.log("🌱 Seeding database with healthcare/medical items...\n");
 
   // ─── Clean existing data ───────────────────────────────
   await prisma.reservation.deleteMany();
@@ -32,112 +32,166 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.warehouse.deleteMany();
 
-  // ─── Create Products ───────────────────────────────────
+  // ─── Create 10 Healthcare Products ─────────────────────
   const products: ProductRecord[] = await Promise.all([
     prisma.product.create({
       data: {
-        name: "Sony WH-1000XM5 Wireless Headphones",
-        description:
-          "Industry-leading noise cancellation with Auto NC Optimizer, crystal-clear hands-free calling, and up to 30-hour battery life.",
-        price: 349.99,
-        sku: "SONY-WH1000XM5",
-        imageUrl: "/images/headphones.svg",
+        name: "Advanced Clinical Blood Pressure Monitor",
+        description: "Clinically validated, wireless blood pressure monitor that stores up to 200 readings for two users.",
+        price: 8499.00,
+        sku: "CLN-ADV-BPM",
+        imageUrl: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=600&q=80",
       },
     }),
     prisma.product.create({
       data: {
-        name: "Logitech MX Ergo Keyboard",
-        description:
-          "Advanced wireless ergonomic keyboard with adjustable palm lift, smart backlighting, and multi-device connectivity via Bluetooth.",
-        price: 199.99,
-        sku: "LOGI-MXERGO-KB",
-        imageUrl: "/images/keyboard.svg",
+        name: "Hospital-Grade Advanced CPAP Machine",
+        description: "Automated positive airway pressure therapy device featuring integrated humidification and ultra-quiet motor technology.",
+        price: 48999.00,
+        sku: "HOS-ADV-CPAP",
+        imageUrl: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80",
       },
     }),
     prisma.product.create({
       data: {
-        name: "CalDigit TS4 USB-C Hub",
-        description:
-          "18-port Thunderbolt 4 dock with 98W charging, 2.5GbE, and dual 6K display support. The ultimate desk companion.",
-        price: 449.99,
-        sku: "CALD-TS4-HUB",
-        imageUrl: "/images/usbhub.svg",
+        name: "Instant Blood Glucose Testing Kit",
+        description: "Instant blood glucose meter offering a target range indicator and seamless synchronization.",
+        price: 1499.00,
+        sku: "CLN-INST-BGM",
+        imageUrl: "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Professional Cardiology Stethoscope",
+        description: "Elite double-lumen cardiology stethoscope built from surgical stainless steel with highly sensitive acoustic diaphragms.",
+        price: 9999.00,
+        sku: "PRO-CARD-STETH",
+        imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "No-Touch Clinical Forehead Thermometer",
+        description: "Dual-technology medical thermometer that supports both physical contact and gentle touchless scanning. Safe for infants and seniors.",
+        price: 3999.00,
+        sku: "CLN-NT-THERM",
+        imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Vantage Finger Pulse Oximeter",
+        description: "Scientific-grade finger pulse oximeter. Clinically proven accurate for oxygen saturation and pulse rate under low blood perfusion.",
+        price: 4500.00,
+        sku: "SCI-PULSE-OXIM",
+        imageUrl: "https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Lightweight Folding Wheelchair",
+        description: "Premium carbon steel folding manual wheelchair with dual-axle positioning, comfortable padded armrests, and swing-away leg rests.",
+        price: 18500.00,
+        sku: "CLN-LGT-WHEEL",
+        imageUrl: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Hospital First Aid Kit (250pc)",
+        description: "Complete emergency kit stocked with sterile gauze, wraps, skin sanitizers, cold packs, bandages, and CPR shields.",
+        price: 2499.00,
+        sku: "HOS-PREM-FAK",
+        imageUrl: "https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Deep Infrared Heat Relief Lamp",
+        description: "300W medically certified deep-penetrating infrared light designed to target muscle aches, joint stiffness, and back strain.",
+        price: 5999.00,
+        sku: "CLN-INF-LAMP",
+        imageUrl: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
+      },
+    }),
+    prisma.product.create({
+      data: {
+        name: "Clinical Sleep Therapy CPAP",
+        description: "Clinical sleep therapy system featuring built-in humidification, auto-set therapy tracking, and remote compliance monitoring.",
+        price: 62000.00,
+        sku: "CLN-SLP-CPAP",
+        imageUrl: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?auto=format&fit=crop&w=600&q=80",
       },
     }),
   ]);
 
-  console.log(`✅ Created ${products.length} products`);
+  console.log(`✅ Created ${products.length} healthcare products`);
 
   // ─── Create Warehouses ─────────────────────────────────
   const warehouses: WarehouseRecord[] = await Promise.all([
     prisma.warehouse.create({
       data: {
-        name: "Mumbai Central Warehouse",
+        name: "Mumbai Central Medical Supply Hub",
         location: "Parel, Mumbai, Maharashtra 400012",
       },
     }),
     prisma.warehouse.create({
       data: {
-        name: "Delhi NCR Distribution Hub",
+        name: "Delhi NCR Clinical Storage Facility",
         location: "Sector 63, Noida, Uttar Pradesh 201301",
       },
     }),
   ]);
 
-  console.log(`✅ Created ${warehouses.length} warehouses`);
+  console.log(`✅ Created ${warehouses.length} medical warehouses`);
 
   // ─── Create Inventory ──────────────────────────────────
-  // Intentionally low stock on USB-C Hub for concurrency testing
-  const inventoryData = [
-    // Sony Headphones - moderate stock
-    {
-      productId: products[0].id,
-      warehouseId: warehouses[0].id,
-      totalQuantity: 75,
-      reservedQuantity: 0,
-    },
-    {
-      productId: products[0].id,
-      warehouseId: warehouses[1].id,
-      totalQuantity: 50,
-      reservedQuantity: 0,
-    },
-    // MX Ergo Keyboard - decent stock
-    {
-      productId: products[1].id,
-      warehouseId: warehouses[0].id,
-      totalQuantity: 40,
-      reservedQuantity: 0,
-    },
-    {
-      productId: products[1].id,
-      warehouseId: warehouses[1].id,
-      totalQuantity: 30,
-      reservedQuantity: 0,
-    },
-    // USB-C Hub - VERY LOW stock (for testing concurrency conflicts)
-    {
-      productId: products[2].id,
-      warehouseId: warehouses[0].id,
-      totalQuantity: 3,
-      reservedQuantity: 0,
-    },
-    {
-      productId: products[2].id,
-      warehouseId: warehouses[1].id,
-      totalQuantity: 2,
-      reservedQuantity: 0,
-    },
-  ];
+  // We'll generate inventory records for all 10 products.
+  // Product #2 (Accu-Chek Instant Blood Glucose Meter - index 2) will have very low stock (3 and 2) for concurrency testing.
+  const inventoryData = products.flatMap((product, idx) => {
+    let qty1 = 2;
+    let qty2 = 1;
+
+    if (idx === 2) {
+      // Very low stock item for testing race conditions
+      qty1 = 1;
+      qty2 = 0;
+    } else if (idx === 0) {
+      qty1 = 3;
+      qty2 = 2;
+    } else if (idx === 5) {
+      qty1 = 1;
+      qty2 = 1;
+    } else if (idx === 9) {
+      qty1 = 2;
+      qty2 = 2;
+    }
+
+    return [
+      {
+        productId: product.id,
+        warehouseId: warehouses[0].id,
+        totalQuantity: qty1,
+        reservedQuantity: 0,
+      },
+      {
+        productId: product.id,
+        warehouseId: warehouses[1].id,
+        totalQuantity: qty2,
+        reservedQuantity: 0,
+      },
+    ];
+  });
 
   const inventories: InventoryRecord[] = await Promise.all(
     inventoryData.map((data) => prisma.inventory.create({ data }))
   );
 
-  console.log(`✅ Created ${inventories.length} inventory records`);
+  console.log(`✅ Created ${inventories.length} stock inventory records`);
 
   // ─── Summary ───────────────────────────────────────────
-  console.log("\n📦 Inventory Summary:");
+  console.log("\n📦 Clinical Stock Inventory Summary:");
   for (const inv of inventories) {
     const product = products.find((p: ProductRecord) => p.id === inv.productId);
     const warehouse = warehouses.find(
@@ -148,7 +202,7 @@ async function main() {
     );
   }
 
-  console.log("\n✅ Seed completed successfully!");
+  console.log("\n✅ Database healthcare seeding complete!");
 }
 
 main()

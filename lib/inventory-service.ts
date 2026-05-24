@@ -76,7 +76,7 @@ export async function getProductsWithInventory(): Promise<
       inventories,
       totalAvailable,
     };
-  });
+  }).sort((a, b) => a.totalAvailable - b.totalAvailable);
 }
 
 /**

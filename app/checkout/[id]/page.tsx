@@ -30,7 +30,8 @@ export default async function CheckoutPage({
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--foreground)] tracking-tight">Checkout</h1>
+        <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">Secure Inventory Hold</span>
+        <h1 className="text-3xl font-extrabold text-[var(--foreground)] tracking-tight mt-3">Checkout / Reservation Page</h1>
       </div>
       
       <CheckoutDetails reservation={reservation} />

@@ -18,11 +18,14 @@ interface Reservation {
 }
 
 import { getPusherClient } from "@/lib/pusher-client";
+import HttpErrorAlert from "@/components/HttpErrorAlert";
+import { parseApiError, type ApiError } from "@/lib/api-errors";
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("ALL");
+  const [actionError, setActionError] = useState<ApiError | null>(null);
 
   const fetchReservations = useCallback(async () => {
     try {
@@ -57,24 +60,44 @@ export default function ReservationsPage() {
   }, [fetchReservations]);
 
   const handleConfirm = async (id: string) => {
+    setActionError(null);
     try {
       const res = await fetch(`/api/reservations/${id}/confirm`, {
         method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
       });
-      if (res.ok) fetchReservations();
-    } catch (error) {
-      console.error("Confirm failed:", error);
+      if (!res.ok) {
+        setActionError(await parseApiError(res, "Failed to confirm reservation."));
+        if (res.status === 410) fetchReservations();
+        return;
+      }
+      fetchReservations();
+    } catch {
+      setActionError({
+        status: 0,
+        title: "Network error",
+        message: "Could not reach the server. Check your connection and try again.",
+      });
     }
   };
 
   const handleRelease = async (id: string) => {
+    setActionError(null);
     try {
       const res = await fetch(`/api/reservations/${id}/release`, {
         method: "POST",
       });
-      if (res.ok) fetchReservations();
-    } catch (error) {
-      console.error("Release failed:", error);
+      if (!res.ok) {
+        setActionError(await parseApiError(res, "Failed to release reservation."));
+        return;
+      }
+      fetchReservations();
+    } catch {
+      setActionError({
+        status: 0,
+        title: "Network error",
+        message: "Could not reach the server. Check your connection and try again.",
+      });
     }
   };
 
@@ -92,26 +115,27 @@ export default function ReservationsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)] tracking-tight">
-            Reservations
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">Inventory Registry</span>
+          <h1 className="text-2xl font-extrabold text-[var(--foreground)] tracking-tight mt-3">
+            Clinical Reservations Registry
           </h1>
-          <p className="text-sm text-[var(--muted)] mt-1">
-            Track all inventory holds and their lifecycle status.
+          <p className="text-sm text-[var(--muted)] mt-1.5 leading-relaxed">
+            Monitor hospital supply reservations, active inventory holdings, and lock statuses across facilities.
           </p>
         </div>
         <button
           onClick={fetchReservations}
-          className="text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] font-medium flex items-center gap-1"
+          className="text-sm cursor-pointer bg-white border border-slate-200 text-blue-600 hover:text-blue-700 hover:bg-slate-50 px-3.5 py-2 rounded-xl font-semibold shadow-sm flex items-center gap-2 transition duration-200"
         >
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 text-blue-600"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth={2}
+            strokeWidth={2.5}
             stroke="currentColor"
           >
             <path
@@ -120,25 +144,31 @@ export default function ReservationsPage() {
               d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
             />
           </svg>
-          Refresh
+          Sync Data
         </button>
       </div>
 
+      {actionError && (
+        <div className="mb-6">
+          <HttpErrorAlert error={actionError} />
+        </div>
+      )}
+
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1.5 mb-6 bg-slate-100 border border-slate-200 rounded-xl p-1 w-fit select-none">
         {(["ALL", "PENDING", "CONFIRMED", "RELEASED", "EXPIRED"] as const).map(
           (tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition duration-200 ${
                 filter === tab
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  ? "bg-white text-blue-900 border border-slate-200/50 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              {tab}
-              <span className="ml-1 text-[10px] opacity-60">
+              {tab === "ALL" ? "All Logs" : tab}
+              <span className={`ml-1.5 px-1.5 py-0.5 text-[9px] rounded-md font-bold leading-none ${filter === tab ? "bg-blue-50 text-blue-700" : "bg-slate-200 text-slate-600"}`}>
                 {counts[tab]}
               </span>
             </button>
@@ -148,11 +178,11 @@ export default function ReservationsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white rounded-lg border border-[var(--border)] p-4 animate-pulse"
+              className="bg-white rounded-2xl border border-[var(--border)] p-5 animate-pulse shadow-sm"
             >
               <div className="flex justify-between">
                 <div className="h-4 bg-gray-200 rounded w-1/3" />
@@ -162,26 +192,26 @@ export default function ReservationsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--muted)]">
+        <div className="text-center py-16 bg-white border border-[var(--border)] rounded-2xl p-8 text-[var(--muted)] shadow-sm">
           <svg
-            className="w-12 h-12 mx-auto mb-3 text-gray-300"
+            className="w-12 h-12 mx-auto mb-3 text-blue-200"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth={1.5}
+            strokeWidth={2}
             stroke="currentColor"
           >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
+              d="M2.25 12h8.953m0 0L12 10.5M11.203 12L12 13.5M21.75 12h-8.953m0 0L12 10.5M12.797 12L12 13.5M12 12V2.25m0 9.75V21.75"
             />
           </svg>
-          <p className="text-sm">
-            No {filter === "ALL" ? "" : filter.toLowerCase()} reservations found
+          <p className="text-sm font-semibold">
+            No {filter === "ALL" ? "" : filter.toLowerCase()} reservations found in registry
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filtered.map((r) => (
             <ReservationRow
               key={r.id}
@@ -227,22 +257,22 @@ function ReservationRow({
   }, [r.status, r.expiresAt]);
 
   return (
-    <div className="bg-white rounded-lg border border-[var(--border)] p-4 hover:border-gray-300 animate-fade-in">
-      <div className="flex items-center justify-between gap-4">
+    <div className="bg-white rounded-2xl border border-[var(--border)] p-5 hover:border-blue-300 hover:shadow-md transition-all duration-300 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-[var(--foreground)] truncate">
+          <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
+            <span className="text-base font-bold text-[var(--foreground)] truncate">
               {r.inventory.product.name}
             </span>
             <StatusBadge status={r.status} />
           </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-            <span>Qty: {r.quantity}</span>
+          <div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap">
+            <span className="font-semibold text-slate-500">Qty: {r.quantity}</span>
             <span>•</span>
-            <span>{r.inventory.warehouse.name}</span>
+            <span className="bg-slate-50 px-2 py-0.5 border border-slate-100 rounded text-slate-600 font-medium">🏥 {r.inventory.warehouse.name.replace(" Medical Supply Hub", "").replace(" Clinical Storage Facility", "")}</span>
             <span>•</span>
-            <span>
+            <span className="font-medium">
               {new Date(r.createdAt).toLocaleString("en-IN", {
                 day: "numeric",
                 month: "short",
@@ -254,10 +284,10 @@ function ReservationRow({
               <>
                 <span>•</span>
                 <span
-                  className={`font-mono font-medium ${
+                  className={`font-mono font-bold flex items-center gap-1 px-2 py-0.5 rounded-md ${
                     timeLeft === "Expired"
-                      ? "text-red-500"
-                      : "text-blue-600"
+                      ? "bg-red-50 text-red-600 border border-red-100"
+                      : "bg-blue-50 text-blue-600 border border-blue-100 animate-pulse-soft"
                   }`}
                 >
                   ⏱ {timeLeft}
@@ -267,28 +297,29 @@ function ReservationRow({
           </div>
         </div>
 
-        {/* ID */}
-        <code className="text-[10px] text-gray-400 font-mono hidden md:block">
-          {r.id.slice(0, 12)}…
-        </code>
+        {/* ID & Actions */}
+        <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end">
+          <code className="text-[10px] text-gray-400 font-mono hidden lg:block bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
+            ID: {r.id.slice(0, 12)}…
+          </code>
 
-        {/* Actions */}
-        {r.status === "PENDING" && timeLeft !== "Expired" && (
-          <div className="flex gap-1.5 shrink-0">
-            <button
-              onClick={() => onConfirm(r.id)}
-              className="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 active:scale-95"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => onRelease(r.id)}
-              className="px-3 py-1.5 text-xs font-medium border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50 active:scale-95"
-            >
-              Release
-            </button>
-          </div>
-        )}
+          {r.status === "PENDING" && timeLeft !== "Expired" && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => onConfirm(r.id)}
+                className="px-3.5 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:scale-95 transition cursor-pointer"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => onRelease(r.id)}
+                className="px-3.5 py-1.5 text-xs font-bold border-2 border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 active:scale-95 transition cursor-pointer"
+              >
+                Release
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -296,15 +327,15 @@ function ReservationRow({
 
 function StatusBadge({ status }: { status: string }) {
   const config = {
-    PENDING: "bg-blue-100 text-blue-700",
-    CONFIRMED: "bg-emerald-100 text-emerald-700",
-    RELEASED: "bg-gray-100 text-gray-600",
-    EXPIRED: "bg-red-100 text-red-600",
-  }[status] || "bg-gray-100 text-gray-600";
+    PENDING: "bg-blue-50 text-blue-700 border-blue-200",
+    CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    RELEASED: "bg-slate-100 text-slate-600 border-slate-200",
+    EXPIRED: "bg-rose-50 text-rose-600 border-rose-200",
+  }[status] || "bg-gray-50 text-gray-600 border-gray-200";
 
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${config}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${config}`}
     >
       {status}
     </span>
